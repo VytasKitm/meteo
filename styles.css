@@ -1,3 +1,5 @@
 body {
-      background-color:lightgrey;
+      background-image: url("./7280763.jpg");
+      background-size: cover;
+      overflow: hidden;
 }

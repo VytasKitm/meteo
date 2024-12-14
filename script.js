@@ -1,4 +1,5 @@
 const rootDiv = document.getElementById("root")
+const body = document.querySelector("body")
 const mainDiv = document.createElement("div")
 const mainHeader = document.createElement("h1")
 const form = document.createElement("form")
@@ -32,7 +33,7 @@ optionSelect2.textContent = "Rytoj"
 
 
 
-
+body.style.background = "7280763.jpg"
 
 inputDiv.style.display = "flex"
 inputDiv.style.flexWrap = "wrap"
@@ -142,34 +143,60 @@ inputSelect.addEventListener("change",() => {
 
 console.log(inputSelect.value)
 
+function createRegEx() {
+        const time = new Date()
+        let currentTimeRegEx
+        if (selectValue == "siandien" || selectValue == undefined) {
+                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)    
+        }
+        else if (selectValue == "rytoj") {
+                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`) 
+        }
+        console.log(selectValue)
+        return currentTimeRegEx
+        
+}
 
-async function fetchData() {  
 
+async function fetchData() { 
+        // gets current time and creates regex ex: 2024-12-13 20:00:00
+        // const time = new Date()
+        // const currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)                                  
         for (let loc of locations) {
                 const res = await fetch(`https://api.meteo.lt/v1/places/${loc}/forecasts/long-term`)
                 const data =  await res.json()
+                for (let i in data.forecastTimestamps) {
+                        if (createRegEx().test(data.forecastTimestamps[i].forecastTimeUtc)) {
+                                let card = createCard(data.place.name,
+                                        data.forecastTimestamps[i].airTemperature,
+                                        data.forecastTimestamps[i].feelsLikeTemperature,
+                                        data.forecastTimestamps[i].conditionCode,true)
+                                mainDiv.appendChild(card)
+                                break
+                        }
+                }
         console.log(data)
         console.log(loc)
-        let card = createCard(data.place.name,
-                        data.forecastTimestamps[3].airTemperature,
-                        data.forecastTimestamps[3].feelsLikeTemperature,
-                        data.forecastTimestamps[3].conditionCode,true)
-        mainDiv.appendChild(card)
-        let time = data.forecastTimestamps[3].forecastTimeUtc
-        console.log(time)
-        console.log(typeof time)
-        const currentTime = new Date()
-        const currentYear = currentTime.getFullYear()
-        const currentDay = currentTime.getDate()
-        const currentHour = currentTime.getHours()
-        const currentMonth = currentTime.getMonth()
-        console.log(currentTime)
-        console.log(currentYear)
-        console.log(currentMonth)
-        console.log(currentDay)
-        console.log(currentHour)
+        
+        // const currentYear = time.getFullYear()
+        // const currentDay = time.getDate()
+        // const currentHour = time.getHours()
+        // const currentMonth = time.getMonth()
+        // console.log(currentYear)
+        // console.log(currentMonth)
+        // console.log(currentDay)
+        // console.log(currentHour)
+        // console.log(time)
+
+        // let currentTimeRegEx = new RegExp(`${time.getFullYear()}-${+time.getMonth()+1}-${time.getDate()} ${time.getHours()}:..:..`)
         }       
 }
+
+
+document.addEventListener('DOMContentLoaded', function() {
+        console.log('Page has been reloaded or newly loaded!');
+        // Your code to run when the page is reloaded goes here
+    });
 
 fetchData()
 
