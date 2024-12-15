@@ -11,10 +11,13 @@ const labelSelect = document.createElement("label")
 const inputSelect = document.createElement("select")
 const optionSelect1 = document.createElement("option")
 const optionSelect2 = document.createElement("option")
+const selectHeader = document.createElement("h2")
 
 
 
 inputDiv.style.width = "300px"
+
+selectHeader.textContent = "Prideti miestai"
 
 input.setAttribute("type","text")
 input.setAttribute("placeholder","Iveskite miesto pavadinima")
@@ -45,6 +48,7 @@ inputDiv.style.marginBottom = "10px"
 
 input.style.height = "28px"
 
+buttonInput.setAttribute("type","submit")
 buttonInput.style.height = "30px"
 buttonInput.style.width = "100px"
 buttonInput.style.backgroundColor = "#4caf50"
@@ -64,7 +68,15 @@ rootDiv.style.height = "100vh"
 
 mainDiv.setAttribute("id","mainDiv")
 
+selectDiv.style.display = "flex"
+selectDiv.style.justifyContent = "center"
+selectDiv.style.flexWrap = "wrap"
+selectDiv.style.width = "80vw"
+selectDiv.style.gap = "20px"
+selectDiv.style.alignContent = "center"
+
 mainDiv.style.display = "flex"
+mainDiv.style.justifyContent = "center"
 mainDiv.style.flexWrap = "wrap"
 mainDiv.style.width = "700px"
 mainDiv.style.gap = "20px"
@@ -83,35 +95,37 @@ const locations = [
 ]
 
 const weatherStatus = {
-        "clear" : "./img/clear.svg",
-        "partly-cloudy" : "./img/partly-cloudy.svg",
-        "cloudy-with-sunny-intervals" : "./img/cloudy-with-sunny-intervals.svg",
+        "clear" : "./img/clear.png",
+        "partly-cloudy" : "./img/partly-cloudy.png",
+        "cloudy-with-sunny-intervals" : "./img/cloudy-with-sunny-intervals.png",
         "cloudy" : "./img/cloudy.png",
-        "light-rain" : "./img/light-rain.svg",
-        "rain" : "./img/rain.svg",
-        "heavy-rain" : "./img/heavy-rain.svg",
-        "thunder" : "./img/thunder.svg",
-        "isolated-thunderstorms" : "./img/isolated-thunderstorms.svg",
-        "thunderstorms" : "./img/thunderstorms.svg",
-        "heavy-rain-with-thunderstorms" : "./img/heavy-rain-with-thunderstorms.svg",
+        "light-rain" : "./img/light-rain.png",
+        "rain" : "./img/rain.png",
+        "heavy-rain" : "./img/heavy-rain.png",
+        "thunder" : "./img/thunder.png",
+        "isolated-thunderstorms" : "./img/isolated-thunderstorms.png",
+        "thunderstorms" : "./img/thunderstorms.png",
+        "heavy-rain-with-thunderstorms" : "./img/heavy-rain-with-thunderstorms.png",
         "light-sleet" : "./img/light-sleet.svg",
         "sleet" : "./img/sleet.svg",
         "freezing-rain" : "./img/freezing-rain.svg",
         "hail" : "./img/hail.svg",
-        "light-snow" : "./img/light-snow.svg",
-        "snow" : "./img/snow.svg",
-        "heavy-snow" : "./img/heavy-snow.svg",
+        "light-snow" : "./img/light-snow.png",
+        "snow" : "./img/snow.png",
+        "heavy-snow" : "./img/heavy-snow.png",
         "fog" : "./img/fog.svg",
-        "null" : "./img/cloudy.svg",
+        "null" : "./img/cloudy.png",
 }
 
 let selectValue
-let currentTimeRegEx
- 
+
+const savedCities = localStorage.getItem("savedCities") == null ? localStorage.setItem("savedCities",JSON.stringify([])) : JSON.parse(localStorage.getItem("savedCities"))
+
 
 function displayPage() {
-        inputDiv.append(input)
-        inputDiv.append(buttonInput)
+        form.append(input)
+        form.append(buttonInput)
+        inputDiv.append(form)
         inputDiv.append(labelSelect)
         inputDiv.append(inputSelect)
         inputSelect.append(optionSelect1)
@@ -172,6 +186,16 @@ function createCard(id,hidden) {
         return cardDiv
 }
 
+function selectFavorites() {
+        const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
+
+}
+
+form.addEventListener("submit", () => {
+        event.preventDefault()
+        fetchData()
+})
+
 function drawCards() {
         for(loc of locations) {
                 const card = createCard(loc,true)
@@ -179,9 +203,17 @@ function drawCards() {
         }
 }
 
+function drawSavedCards() {
+        const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
+        for (selectCity of arrayLS) {
+                const card = createCard(`fav_${selectCity}`,false)
+                selectDiv.append(card)                      
+        }
+
+}
+
 
 inputSelect.addEventListener("change",() => {
-        createRegEx()
         updateWeather(createRegEx())
 })
 
@@ -190,35 +222,57 @@ console.log(inputSelect.value)
 function createRegEx() {
         const time = new Date()
         selectValue = inputSelect.value
+        let currentTimeRegEx
         if (selectValue == "siandien" || selectValue == undefined) {
                 currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)    
                 console.log(`dabartinis regex= ${currentTimeRegEx}`)
         }
         else if (selectValue == "rytoj") {    
-                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${(time.getDate()+1).toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)    
+                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${(time.getDate()+1).toString().padStart(2,'0')} 12:..:..`)    
                 console.log(`dabartinis regex= ${currentTimeRegEx}`)
         }
         return currentTimeRegEx    
 }
 
 
-async function fetchData() {                                 
-        for (let loc of locations) {
-                const res = await fetch(`https://api.meteo.lt/v1/places/${loc}/forecasts/long-term`)
-                const data =  await res.json()
-                for (let i in data.forecastTimestamps) {
-                        if (createRegEx().test(data.forecastTimestamps[i].forecastTimeUtc)) {
-                                let card = createCard(data.place.name,
-                                        data.forecastTimestamps[i].airTemperature,
-                                        data.forecastTimestamps[i].feelsLikeTemperature,
-                                        data.forecastTimestamps[i].conditionCode,true)
-                                mainDiv.appendChild(card)
-                                break
+// async function fetchData() {                                 
+//         for (let loc of locations) {
+//                 const res = await fetch(`https://api.meteo.lt/v1/places/${loc}/forecasts/long-term`)
+//                 const data =  await res.json()
+//                 for (let i in data.forecastTimestamps) {
+//                         if (createRegEx().test(data.forecastTimestamps[i].forecastTimeUtc)) {
+//                                 let card = createCard(data.place.name,
+//                                         data.forecastTimestamps[i].airTemperature,
+//                                         data.forecastTimestamps[i].feelsLikeTemperature,
+//                                         data.forecastTimestamps[i].conditionCode,true)
+//                                 mainDiv.appendChild(card)
+//                                 break
+//                         }
+//                 }
+//         console.log(data)
+//         console.log(loc)     
+//         }       
+// }
+
+async function fetchData() { 
+        const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
+        const city = input.value
+        const res = await fetch(`https://api.meteo.lt/v1/places/${city}/forecasts/long-term`)
+        const data =  await res.json()
+        try {
+                if (data.place.name.toLowerCase() == city.toLowerCase()) {
+                        if (arrayLS.some(el => el == data.place.name)) {
+                                alert("Toks miestas jau pridetas")
                         }
-                }
-        console.log(data)
-        console.log(loc)     
-        }       
+                        else {
+                                arrayLS.push(data.place.name)
+                        }
+                }         
+        }    
+        catch(error){
+                alert("tokio miesto nera")
+        }                       
+        localStorage.setItem("savedCities",JSON.stringify(arrayLS))           
 }
 
 async function updateWeather(timeRegEx) {
@@ -229,33 +283,49 @@ async function updateWeather(timeRegEx) {
                 const city = target.querySelector("h4")
                 const temp = target.querySelector(".temp")
                 const jutimine = target.querySelector(".jutimine")
-                const conditionImage = target.querySelector("img")     
+                const conditionImage = target.querySelector("img")  
                 for (let i in data.forecastTimestamps) {
                         if (timeRegEx.test(data.forecastTimestamps[i].forecastTimeUtc)) {
                                 city.textContent = `${data.place.name}`
                                 temp.textContent = `Temperatura: ${data.forecastTimestamps[i].airTemperature}`
                                 jutimine.textContent = `Jutimine temperatura: ${data.forecastTimestamps[i].feelsLikeTemperature}`
                                 conditionImage.src = `${weatherStatus[data.forecastTimestamps[i].conditionCode]}` 
-                                // let card = createCard(data.place.name,
-                                //         data.forecastTimestamps[i].airTemperature,
-                                //         data.forecastTimestamps[i].feelsLikeTemperature,
-                                //         data.forecastTimestamps[i].conditionCode,true)
-                                // mainDiv.appendChild(card)
+                                break
+                        }
+                }
+        }
+        const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
+        for(selectCity of arrayLS) { 
+                console.log(selectCity)
+                const res = await fetch(`https://api.meteo.lt/v1/places/${selectCity}/forecasts/long-term`)
+                const data =  await res.json()
+                const target = document.getElementById(`fav_${selectCity}`)
+                const city = target.querySelector("h4")
+                const temp = target.querySelector(".temp")
+                const jutimine = target.querySelector(".jutimine")
+                const conditionImage = target.querySelector("img")  
+                for (let i in data.forecastTimestamps) {
+                        if (timeRegEx.test(data.forecastTimestamps[i].forecastTimeUtc)) {
+                                city.textContent = `${data.place.name}`
+                                temp.textContent = `Temperatura: ${data.forecastTimestamps[i].airTemperature}`
+                                jutimine.textContent = `Jutimine temperatura: ${data.forecastTimestamps[i].feelsLikeTemperature}`
+                                conditionImage.src = `${weatherStatus[data.forecastTimestamps[i].conditionCode]}` 
                                 break
                         }
                 }
         }
 
+
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-        console.log('Page has been reloaded or newly loaded!');
         drawCards()
+        drawSavedCards()
         updateWeather(createRegEx())
-        // Your code to run when the page is reloaded goes here
     });
 
-// fetchData()
-// drawCards()
-rootDiv.appendChild(mainDiv)
 
+
+rootDiv.appendChild(mainDiv)
+rootDiv.appendChild(selectHeader)
+rootDiv.appendChild(selectDiv)
