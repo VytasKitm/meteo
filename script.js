@@ -132,12 +132,14 @@ function displayPage() {
         inputSelect.append(optionSelect2)
         rootDiv.append(mainHeader)
         rootDiv.append(inputDiv)
+        rootDiv.appendChild(mainDiv)
+        rootDiv.appendChild(selectHeader)
+        rootDiv.appendChild(selectDiv)
 
 }
 
 displayPage()
 
-// function createCard(id,location,temperature,jutimine,condition,hidden) {
 function createCard(id,hidden) {
         const infoMiestas = document.createElement("h4")
         const infoTemperature = document.createElement("span")
@@ -152,7 +154,9 @@ function createCard(id,hidden) {
         conditionImage.style.height = "60px"
         conditionDiv.style.alignItems = "center"
         conditionDiv.style.marginTop = "20px"
-        cardDiv.setAttribute("id",`${id}`)
+        buttonDelete.setAttribute("id",`${id}`)
+        buttonDelete.addEventListener("click",deleteCards)
+        cardDiv.setAttribute("id",`city_${id}`)
         infoTemperature.classList.add("temp")
         infoJutimine.classList.add("jutimine") 
         cardDiv.style.position = "relative"
@@ -176,29 +180,24 @@ function createCard(id,hidden) {
         if (hidden) {
                 buttonDelete.style.display = "none"
         }
-        // infoMiestas.textContent = location
-        // infoTemperature.textContent = `Temperatura: ${temperature}`
-        // infoJutimine.textContent = `Jutimine temperatura: ${jutimine}`
         infoOroSalygos.textContent = `Oro salygos: `
-        // conditionImage.src = `${weatherStatus[condition]}`
         conditionDiv.append(infoOroSalygos,conditionImage)
         cardDiv.append(buttonDelete,infoMiestas,infoTemperature,infoJutimine,conditionDiv)
+        
         return cardDiv
 }
 
-function selectFavorites() {
-        const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
-
-}
 
 form.addEventListener("submit", () => {
         event.preventDefault()
-        fetchData()
+        addToLocalStorage()
+        drawSavedCards()
 })
 
+
 function drawCards() {
-        for(loc of locations) {
-                const card = createCard(loc,true)
+        for(let city of locations) {
+                const card = createCard(`main_${city}`,true)
                 mainDiv.appendChild(card)
         }
 }
@@ -206,61 +205,54 @@ function drawCards() {
 function drawSavedCards() {
         const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
         for (selectCity of arrayLS) {
-                const card = createCard(`fav_${selectCity}`,false)
-                selectDiv.append(card)                      
+                let target = document.getElementById(`city_${selectCity}`)
+                if (!target) {
+                       const card = createCard(`${selectCity}`,false)
+                       selectDiv.append(card)  
+                }                        
         }
-
 }
 
+function deleteCards() {
+        const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
+        const deleteId = event.target.id
+        const removeElement = document.getElementById(`city_${deleteId}`)
+        const index = arrayLS.indexOf(`${deleteId}`)
+        arrayLS.splice(index, 1)
+        localStorage.setItem("savedCities",JSON.stringify(arrayLS))
+        removeElement.remove()
+        }
 
+       
 inputSelect.addEventListener("change",() => {
         updateWeather(createRegEx())
+        updateWeatherSelect(createRegEx())
 })
 
-console.log(inputSelect.value)
 
 function createRegEx() {
         const time = new Date()
         selectValue = inputSelect.value
-        let currentTimeRegEx
+        let timeRegEx
         if (selectValue == "siandien" || selectValue == undefined) {
-                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)    
-                console.log(`dabartinis regex= ${currentTimeRegEx}`)
+                timeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)    
+                console.log(`dabartinis regex= ${timeRegEx}`)
         }
         else if (selectValue == "rytoj") {    
-                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${(time.getDate()+1).toString().padStart(2,'0')} 12:..:..`)    
-                console.log(`dabartinis regex= ${currentTimeRegEx}`)
+                timeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${(time.getDate()+1).toString().padStart(2,'0')} 12:..:..`)    
+                console.log(`dabartinis regex= ${timeRegEx}`)
         }
-        return currentTimeRegEx    
+        return timeRegEx    
 }
 
 
-// async function fetchData() {                                 
-//         for (let loc of locations) {
-//                 const res = await fetch(`https://api.meteo.lt/v1/places/${loc}/forecasts/long-term`)
-//                 const data =  await res.json()
-//                 for (let i in data.forecastTimestamps) {
-//                         if (createRegEx().test(data.forecastTimestamps[i].forecastTimeUtc)) {
-//                                 let card = createCard(data.place.name,
-//                                         data.forecastTimestamps[i].airTemperature,
-//                                         data.forecastTimestamps[i].feelsLikeTemperature,
-//                                         data.forecastTimestamps[i].conditionCode,true)
-//                                 mainDiv.appendChild(card)
-//                                 break
-//                         }
-//                 }
-//         console.log(data)
-//         console.log(loc)     
-//         }       
-// }
-
-async function fetchData() { 
+async function addToLocalStorage() { 
         const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
-        const city = input.value
-        const res = await fetch(`https://api.meteo.lt/v1/places/${city}/forecasts/long-term`)
+        const inputCity = input.value
+        const res = await fetch(`https://api.meteo.lt/v1/places/${inputCity}/forecasts/long-term`)
         const data =  await res.json()
         try {
-                if (data.place.name.toLowerCase() == city.toLowerCase()) {
+                if (data.place.name.toLowerCase() == inputCity.toLowerCase()) {
                         if (arrayLS.some(el => el == data.place.name)) {
                                 alert("Toks miestas jau pridetas")
                         }
@@ -272,21 +264,24 @@ async function fetchData() {
         catch(error){
                 alert("tokio miesto nera")
         }                       
-        localStorage.setItem("savedCities",JSON.stringify(arrayLS))           
+        localStorage.setItem("savedCities",JSON.stringify(arrayLS))
+        drawSavedCards()
+        updateWeatherSelect(createRegEx())         
 }
 
+
 async function updateWeather(timeRegEx) {
-        for(loc of locations) { 
-                const res = await fetch(`https://api.meteo.lt/v1/places/${loc}/forecasts/long-term`)
+        for(let city of locations) { 
+                const res = await fetch(`https://api.meteo.lt/v1/places/${city}/forecasts/long-term`)
                 const data =  await res.json()
-                const target = document.getElementById(loc)
-                const city = target.querySelector("h4")
+                const target = document.getElementById(`city_main_${city}`)
+                const cityName = target.querySelector("h4")
                 const temp = target.querySelector(".temp")
                 const jutimine = target.querySelector(".jutimine")
                 const conditionImage = target.querySelector("img")  
                 for (let i in data.forecastTimestamps) {
                         if (timeRegEx.test(data.forecastTimestamps[i].forecastTimeUtc)) {
-                                city.textContent = `${data.place.name}`
+                                cityName.textContent = `${data.place.name}`
                                 temp.textContent = `Temperatura: ${data.forecastTimestamps[i].airTemperature}`
                                 jutimine.textContent = `Jutimine temperatura: ${data.forecastTimestamps[i].feelsLikeTemperature}`
                                 conditionImage.src = `${weatherStatus[data.forecastTimestamps[i].conditionCode]}` 
@@ -294,12 +289,17 @@ async function updateWeather(timeRegEx) {
                         }
                 }
         }
+
+}
+
+
+async function updateWeatherSelect(timeRegEx) {
         const arrayLS = JSON.parse(localStorage.getItem("savedCities"))
         for(selectCity of arrayLS) { 
                 console.log(selectCity)
                 const res = await fetch(`https://api.meteo.lt/v1/places/${selectCity}/forecasts/long-term`)
                 const data =  await res.json()
-                const target = document.getElementById(`fav_${selectCity}`)
+                const target = document.getElementById(`city_${selectCity}`)
                 const city = target.querySelector("h4")
                 const temp = target.querySelector(".temp")
                 const jutimine = target.querySelector(".jutimine")
@@ -314,18 +314,16 @@ async function updateWeather(timeRegEx) {
                         }
                 }
         }
-
-
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
         drawCards()
         drawSavedCards()
         updateWeather(createRegEx())
+        updateWeatherSelect(createRegEx())
     });
 
 
 
-rootDiv.appendChild(mainDiv)
-rootDiv.appendChild(selectHeader)
-rootDiv.appendChild(selectDiv)
+
