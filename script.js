@@ -13,6 +13,7 @@ const optionSelect1 = document.createElement("option")
 const optionSelect2 = document.createElement("option")
 
 
+
 inputDiv.style.width = "300px"
 
 input.setAttribute("type","text")
@@ -81,7 +82,31 @@ const locations = [
         "Alytus"
 ]
 
+const weatherStatus = {
+        "clear" : "./img/clear.svg",
+        "partly-cloudy" : "./img/partly-cloudy.svg",
+        "cloudy-with-sunny-intervals" : "./img/cloudy-with-sunny-intervals.svg",
+        "cloudy" : "./img/cloudy.png",
+        "light-rain" : "./img/light-rain.svg",
+        "rain" : "./img/rain.svg",
+        "heavy-rain" : "./img/heavy-rain.svg",
+        "thunder" : "./img/thunder.svg",
+        "isolated-thunderstorms" : "./img/isolated-thunderstorms.svg",
+        "thunderstorms" : "./img/thunderstorms.svg",
+        "heavy-rain-with-thunderstorms" : "./img/heavy-rain-with-thunderstorms.svg",
+        "light-sleet" : "./img/light-sleet.svg",
+        "sleet" : "./img/sleet.svg",
+        "freezing-rain" : "./img/freezing-rain.svg",
+        "hail" : "./img/hail.svg",
+        "light-snow" : "./img/light-snow.svg",
+        "snow" : "./img/snow.svg",
+        "heavy-snow" : "./img/heavy-snow.svg",
+        "fog" : "./img/fog.svg",
+        "null" : "./img/cloudy.svg",
+}
+
 let selectValue
+let currentTimeRegEx
  
 
 function displayPage() {
@@ -98,14 +123,24 @@ function displayPage() {
 
 displayPage()
 
-function createCard(location,temperature,jutimine,condition,hidden) {
+// function createCard(id,location,temperature,jutimine,condition,hidden) {
+function createCard(id,hidden) {
         const infoMiestas = document.createElement("h4")
         const infoTemperature = document.createElement("span")
         const infoJutimine = document.createElement("span")
         const infoOroSalygos = document.createElement("span")
         const buttonDelete = document.createElement("button")
         const cardDiv = document.createElement("div")
-        cardDiv.setAttribute("id","cardDiv")
+        const conditionImage = document.createElement("img")
+        const conditionDiv = document.createElement("div")
+        conditionDiv.style.display = "flex"
+        conditionImage.style.width = "60px"
+        conditionImage.style.height = "60px"
+        conditionDiv.style.alignItems = "center"
+        conditionDiv.style.marginTop = "20px"
+        cardDiv.setAttribute("id",`${id}`)
+        infoTemperature.classList.add("temp")
+        infoJutimine.classList.add("jutimine") 
         cardDiv.style.position = "relative"
         cardDiv.style.display = "flex"
         cardDiv.style.flexDirection ="column"
@@ -127,41 +162,47 @@ function createCard(location,temperature,jutimine,condition,hidden) {
         if (hidden) {
                 buttonDelete.style.display = "none"
         }
-        infoMiestas.textContent = location
-        infoTemperature.textContent = `Temperatura: ${temperature}`
-        infoJutimine.textContent = `Jutimine temperatura: ${jutimine}`
-        infoOroSalygos.textContent = `Oro salygos: ${condition}`
-        cardDiv.append(buttonDelete,infoMiestas,infoTemperature,infoJutimine,infoOroSalygos)
+        // infoMiestas.textContent = location
+        // infoTemperature.textContent = `Temperatura: ${temperature}`
+        // infoJutimine.textContent = `Jutimine temperatura: ${jutimine}`
+        infoOroSalygos.textContent = `Oro salygos: `
+        // conditionImage.src = `${weatherStatus[condition]}`
+        conditionDiv.append(infoOroSalygos,conditionImage)
+        cardDiv.append(buttonDelete,infoMiestas,infoTemperature,infoJutimine,conditionDiv)
         return cardDiv
+}
+
+function drawCards() {
+        for(loc of locations) {
+                const card = createCard(loc,true)
+                mainDiv.appendChild(card)
+        }
 }
 
 
 inputSelect.addEventListener("change",() => {
-        selectValue = inputSelect.value
-        console.log(selectValue)
+        createRegEx()
+        updateWeather(createRegEx())
 })
 
 console.log(inputSelect.value)
 
 function createRegEx() {
         const time = new Date()
-        let currentTimeRegEx
+        selectValue = inputSelect.value
         if (selectValue == "siandien" || selectValue == undefined) {
                 currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)    
+                console.log(`dabartinis regex= ${currentTimeRegEx}`)
         }
-        else if (selectValue == "rytoj") {
-                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`) 
+        else if (selectValue == "rytoj") {    
+                currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${(time.getDate()+1).toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)    
+                console.log(`dabartinis regex= ${currentTimeRegEx}`)
         }
-        console.log(selectValue)
-        return currentTimeRegEx
-        
+        return currentTimeRegEx    
 }
 
 
-async function fetchData() { 
-        // gets current time and creates regex ex: 2024-12-13 20:00:00
-        // const time = new Date()
-        // const currentTimeRegEx = new RegExp(`${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2,'0')}-${time.getDate().toString().padStart(2,'0')} ${time.getHours().toString().padStart(2,'0')}:..:..`)                                  
+async function fetchData() {                                 
         for (let loc of locations) {
                 const res = await fetch(`https://api.meteo.lt/v1/places/${loc}/forecasts/long-term`)
                 const data =  await res.json()
@@ -176,29 +217,45 @@ async function fetchData() {
                         }
                 }
         console.log(data)
-        console.log(loc)
-        
-        // const currentYear = time.getFullYear()
-        // const currentDay = time.getDate()
-        // const currentHour = time.getHours()
-        // const currentMonth = time.getMonth()
-        // console.log(currentYear)
-        // console.log(currentMonth)
-        // console.log(currentDay)
-        // console.log(currentHour)
-        // console.log(time)
-
-        // let currentTimeRegEx = new RegExp(`${time.getFullYear()}-${+time.getMonth()+1}-${time.getDate()} ${time.getHours()}:..:..`)
+        console.log(loc)     
         }       
 }
 
+async function updateWeather(timeRegEx) {
+        for(loc of locations) { 
+                const res = await fetch(`https://api.meteo.lt/v1/places/${loc}/forecasts/long-term`)
+                const data =  await res.json()
+                const target = document.getElementById(loc)
+                const city = target.querySelector("h4")
+                const temp = target.querySelector(".temp")
+                const jutimine = target.querySelector(".jutimine")
+                const conditionImage = target.querySelector("img")     
+                for (let i in data.forecastTimestamps) {
+                        if (timeRegEx.test(data.forecastTimestamps[i].forecastTimeUtc)) {
+                                city.textContent = `${data.place.name}`
+                                temp.textContent = `Temperatura: ${data.forecastTimestamps[i].airTemperature}`
+                                jutimine.textContent = `Jutimine temperatura: ${data.forecastTimestamps[i].feelsLikeTemperature}`
+                                conditionImage.src = `${weatherStatus[data.forecastTimestamps[i].conditionCode]}` 
+                                // let card = createCard(data.place.name,
+                                //         data.forecastTimestamps[i].airTemperature,
+                                //         data.forecastTimestamps[i].feelsLikeTemperature,
+                                //         data.forecastTimestamps[i].conditionCode,true)
+                                // mainDiv.appendChild(card)
+                                break
+                        }
+                }
+        }
+
+}
 
 document.addEventListener('DOMContentLoaded', function() {
         console.log('Page has been reloaded or newly loaded!');
+        drawCards()
+        updateWeather(createRegEx())
         // Your code to run when the page is reloaded goes here
     });
 
-fetchData()
-
+// fetchData()
+// drawCards()
 rootDiv.appendChild(mainDiv)
 
